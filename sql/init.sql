@@ -14,13 +14,6 @@ CREATE TABLE School
     email_suffix varchar(255) unique            not null # would only be for verifying student is from school.
 );
 
-# this table will help compare restaurants based on cuisine
-CREATE TABLE Cuisine
-(
-    id   int                not null primary key auto_increment,
-    type varchar(30) unique not null default 'Other' # e.g. Italian, Chinese, Other
-);
-
 -- Created by Adrian Viano-Robles
 CREATE TABLE Restaurant
 (
@@ -31,38 +24,21 @@ CREATE TABLE Restaurant
     campus_location varchar(50) not null
 );
 
-# junction table for restaurant and cuisine, so restaurants can have multiple cuisines (e.g. Italian + Pizza)
-CREATE TABLE RestaurantCuisine
-(
-    restaurant_id int not null references Restaurant (id),
-    cuisine_id    int not null references Cuisine (id),
-    primary key (restaurant_id, cuisine_id)
-);
-
-# this table helps identify each menu item with a particular food group, such as a sandwich or pizza.
-# this will help with cross-restaurant comparison of items (who has better pizza?)
-CREATE TABLE FoodGroup
-(
-    id   int         not null primary key auto_increment,
-    name varchar(30) not null unique # e.g. Sandwich, Burger, Pizza
-);
-
 CREATE TABLE MenuItem
 (
     id            int         not null primary key auto_increment,
     restaurant_id int         not null references Restaurant (id),
-    food_group_id int         not null references FoodGroup (id),
     name          varchar(30) not null,
-    description   varchar(50) not null,
+    description   varchar(200) not null,
     price         double
 );
 
 -- Created by Jaheen Reza
 CREATE TABLE User
-(                                   # not making username/email the primary key, in case these need to be changed ever.
+(   # not making username/email the primary key, in case these need to be changed ever.
     id        int         not null primary key auto_increment,
     username  varchar(30) not null unique,
-    password  varchar(30) not null, # password hash?
+    password  char(60)    not null, #bcrypt hash
     email     varchar(50) not null unique,
     school_id int         not null references School (id)
     #constraint to check that email contains School(email_suffix)?
@@ -106,16 +82,20 @@ CREATE TABLE MenuItemReview
 
 # restaurant review comments & menuitem review comments optional, but seems a little bit much.
 
+CREATE TABLE UserLikedRestaurant
+(
+    user_id int not null references User (id),
+    restaurant_id int not null references Restaurant (id),
+    primary key (user_id, restaurant_id)
+);
 
-# more junction tables:
-
-CREATE TABLE UserFavoritedMenuItem
+CREATE TABLE UserLikedMenuItem
 (
     user_id      int not null references User (id),
     menu_item_id int not null references MenuItem (id),
     primary key (user_id, menu_item_id)
 );
-# should the user have the option to favorite restaurants too?
+
 
 # combines users and their tags
 CREATE TABLE UserTag
@@ -138,6 +118,7 @@ CREATE TABLE MenuItemTag
 (
     menu_item_id int not null references MenuItem (id),
     tag_id       int not null references Tag (id),
+    is_primary   boolean default false, # a menu item should only have 1 primary tag.
     primary key (menu_item_id, tag_id)
 );
 
